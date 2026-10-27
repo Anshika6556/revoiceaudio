@@ -104,7 +104,8 @@ export async function generateUniqueParticipantId(): Promise<string> {
 
 export interface RegisterParams {
   name: string;
-  email: string;
+  phone: string;
+  email?: string;
   gender: Gender;
   age?: number;
   cohort?: Cohort;
@@ -163,12 +164,23 @@ class AuthService {
    * Register a new participant or staff account
    */
   async register(params: RegisterParams): Promise<User> {
-    const normalizedEmail = params.email.trim().toLowerCase();
+    const rawPhone = params.phone.trim();
+    if (!rawPhone) {
+      throw new Error('Mobile number is required for registration.');
+    }
 
-    // Check duplicate email
-    const existing = await dbService.getUserByEmail(normalizedEmail);
-    if (existing) {
-      throw new Error('An account with this email address is already registered.');
+    // Check duplicate mobile number
+    const existingPhone = await dbService.getUserByPhone(rawPhone);
+    if (existingPhone) {
+      throw new Error('An account with this mobile number is already registered.');
+    }
+
+    let normalizedEmail = params.email ? params.email.trim().toLowerCase() : undefined;
+    if (normalizedEmail) {
+      const existingEmail = await dbService.getUserByEmail(normalizedEmail);
+      if (existingEmail) {
+        throw new Error('An account with this email address is already registered.');
+      }
     }
 
     // Generate unique participant ID or staff ID
@@ -186,7 +198,8 @@ class AuthService {
       id: crypto.randomUUID(),
       participantId,
       name: params.name.trim(),
-      email: normalizedEmail,
+      phone: rawPhone,
+      email: normalizedEmail || `${participantId.toLowerCase()}@revoice.local`,
       role,
       cohort,
       gender: params.gender,
@@ -220,7 +233,7 @@ class AuthService {
       id: crypto.randomUUID(),
       action: 'USER_REGISTERED',
       performedBy: newUser.participantId,
-      details: `New ${role} account created for ${newUser.email} (Cohort: ${cohort})`,
+      details: `New ${role} account created for ${newUser.phone} (Cohort: ${cohort})`,
       timestamp: Date.now(),
       targetId: newUser.id,
     });
@@ -264,23 +277,30 @@ class AuthService {
   }
 
   /**
-   * Login with email or Participant ID, with optional role verification
+   * Login with mobile number, email or Participant ID, with optional role verification
    */
   async login(loginIdentifier: string, password: string, requiredRole?: UserRole): Promise<User> {
     const trimmed = loginIdentifier.trim();
     const upper = trimmed.toUpperCase();
     let user: User | null = null;
 
-    if (upper.startsWith('SPK_') || upper.startsWith('STAFF_') || !trimmed.includes('@')) {
+    if (upper.startsWith('SPK_') || upper.startsWith('STAFF_')) {
       user = await dbService.getUserByParticipantId(upper);
-      if (!user && trimmed.includes('@')) {
-        user = await dbService.getUserByEmail(trimmed.toLowerCase());
-      }
-    } else {
+    }
+
+    // Try finding by mobile number if digits are present or no @
+    if (!user && (/\d{4,}/.test(trimmed) || !trimmed.includes('@'))) {
+      user = await dbService.getUserByPhone(trimmed);
+    }
+
+    // Try finding by email
+    if (!user) {
       user = await dbService.getUserByEmail(trimmed.toLowerCase());
-      if (!user) {
-        user = await dbService.getUserByParticipantId(upper);
-      }
+    }
+
+    // Fallback search by participant ID
+    if (!user) {
+      user = await dbService.getUserByParticipantId(upper);
     }
 
     if (!user) {
@@ -330,7 +350,7 @@ class AuthService {
       id: crypto.randomUUID(),
       action: 'USER_LOGIN',
       performedBy: user.participantId,
-      details: `${user.role.toUpperCase()} session authenticated (${user.email})`,
+      details: `${user.role.toUpperCase()} session authenticated (${user.phone || user.email})`,
       timestamp: Date.now(),
       targetId: user.id,
     });
@@ -356,13 +376,24 @@ class AuthService {
   }
 
   /**
-   * Reset / Recover Password by verified email
+   * Reset / Recover Password by verified mobile number or email
    */
-  async resetPassword(email: string, newPass: string): Promise<void> {
-    const normalized = email.trim().toLowerCase();
-    const user = await dbService.getUserByEmail(normalized);
+  async resetPassword(identifier: string, newPass: string): Promise<void> {
+    const trimmed = identifier.trim();
+    let user: User | null = null;
+
+    if (/\d{4,}/.test(trimmed) || !trimmed.includes('@')) {
+      user = await dbService.getUserByPhone(trimmed);
+    }
     if (!user) {
-      throw new Error('No account found matching that email.');
+      user = await dbService.getUserByEmail(trimmed.toLowerCase());
+    }
+    if (!user) {
+      user = await dbService.getUserByParticipantId(trimmed.toUpperCase());
+    }
+
+    if (!user) {
+      throw new Error('No account found matching that mobile number or email.');
     }
     const { hash, salt } = await hashPassword(newPass);
     user.passwordHash = hash;

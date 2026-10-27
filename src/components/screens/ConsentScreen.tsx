@@ -102,7 +102,7 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
             <h3 className="font-bold text-slate-800 mb-1">2. Information & Audio Format</h3>
             <p className="leading-relaxed">
-              We collect high-fidelity audio recordings of designated phrases (16-bit PCM WAV at 16,000 Hz Mono) and self-reported demographic metadata. Your legal name and email address are never written to recording filenames or public manifests.
+              We collect high-fidelity audio recordings of designated phrases (16-bit PCM WAV at 16,000 Hz Mono) and self-reported demographic metadata. Your legal name and mobile number / contact details are never written to recording filenames or public manifests.
             </p>
           </div>
 

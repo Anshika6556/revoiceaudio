@@ -66,7 +66,7 @@ export const AdminDeletionsScreen: React.FC<AdminDeletionsScreenProps> = ({
       await deletionService.updateStatus(
         selectedRequest.id,
         selectedStatus,
-        adminUser.email,
+        adminUser.email || adminUser.participantId,
         staffNote.trim()
       );
       setFeedback(`Request ${selectedRequest.id} successfully updated to ${selectedStatus}.`);

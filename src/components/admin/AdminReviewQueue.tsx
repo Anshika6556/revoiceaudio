@@ -145,7 +145,7 @@ export const AdminReviewQueue: React.FC<AdminReviewQueueProps> = ({
         activeRecording.id,
         'approved',
         adminUser.id,
-        adminUser.email,
+        adminUser.email || adminUser.participantId,
         checklist
       );
       setReviewFeedback(`Recording ${activeRecording.id} approved for research quality.`);
@@ -180,7 +180,7 @@ export const AdminReviewQueue: React.FC<AdminReviewQueueProps> = ({
         activeRecording.id,
         targetStatus,
         adminUser.id,
-        adminUser.email,
+        adminUser.email || adminUser.participantId,
         checklist,
         decisionReason.trim()
       );

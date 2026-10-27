@@ -93,7 +93,7 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
       await dbService.addAuditLog({
         id: crypto.randomUUID(),
         action: 'ADMIN_PASSWORD_CHANGED',
-        performedBy: adminUser.email,
+        performedBy: adminUser.email || adminUser.participantId,
         details: `Administrator credentials successfully updated with PBKDF2 hash renewal.`,
         timestamp: Date.now(),
       });
@@ -122,7 +122,7 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
       await dbService.addAuditLog({
         id: crypto.randomUUID(),
         action: 'ADMIN_ETHICS_AFFIRMED',
-        performedBy: adminUser.email,
+        performedBy: adminUser.email || adminUser.participantId,
         details: `ReVoice Clinical Administrator re-affirmed Non-Disclosure & Anti-Leakage Undertaking (NDA v2.4).`,
         timestamp: now,
       });

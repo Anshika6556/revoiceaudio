@@ -12,7 +12,7 @@ import {
 import { getDefaultSentences } from '../data/sampleSentences';
 
 const DB_NAME = 'ReVoiceAudioSpeechCorpusDB';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 /**
  * IndexedDB Relational Database Service (v3)
@@ -56,6 +56,9 @@ class DatabaseService {
         }
         if (!userStore.indexNames.contains('participantId')) {
           userStore.createIndex('participantId', 'participantId', { unique: true });
+        }
+        if (!userStore.indexNames.contains('phone')) {
+          userStore.createIndex('phone', 'phone', { unique: false });
         }
         if (!userStore.indexNames.contains('role')) {
           userStore.createIndex('role', 'role', { unique: false });
@@ -220,6 +223,7 @@ class DatabaseService {
           participantId: existingAdmin?.participantId || 'STAFF_0001',
           name: existingAdmin?.name || 'ReVoice Administrator',
           email: targetEmail,
+          phone: existingAdmin?.phone || '9999999999',
           role: 'admin',
           cohort: 'healthy',
           gender: 'prefer_not_to_say',
@@ -253,6 +257,29 @@ class DatabaseService {
       const req = store.add(user);
       req.onsuccess = () => resolve();
       req.onerror = () => reject(req.error);
+    });
+  }
+
+  async getUserByPhone(phone: string): Promise<User | null> {
+    const db = await this.openDatabase();
+    const cleanDigits = phone.replace(/\D/g, '');
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('users', 'readonly');
+      const store = tx.objectStore('users');
+      const allReq = store.getAll();
+      allReq.onsuccess = () => {
+        const list = (allReq.result || []) as User[];
+        const match = list.find((u) => {
+          if (!u.phone) return false;
+          const uDigits = u.phone.replace(/\D/g, '');
+          if (cleanDigits.length >= 7 && uDigits.length >= 7) {
+            return uDigits.endsWith(cleanDigits) || cleanDigits.endsWith(uDigits);
+          }
+          return u.phone.trim() === phone.trim();
+        });
+        resolve(match || null);
+      };
+      allReq.onerror = () => reject(allReq.error);
     });
   }
 

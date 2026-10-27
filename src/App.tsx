@@ -532,7 +532,7 @@ export default function App() {
       await dbService.addAuditLog({
         id: crypto.randomUUID(),
         action: 'DATASET_EXPORTED',
-        performedBy: currentUser.email,
+        performedBy: currentUser.email || currentUser.participantId,
         details: `Exported verified speech corpus containing ${exportedCount} clinically approved takes (${(blob.size / 1024).toFixed(0)} KB ZIP).`,
         timestamp: Date.now(),
       });

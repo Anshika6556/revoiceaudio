@@ -747,7 +747,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
 
                     <div className="text-xs text-slate-500 flex items-center justify-between border-t border-slate-100 pt-2">
-                      <span>{p.email}</span>
+                      <span>{p.phone ? `Mobile: ${p.phone}` : p.email}</span>
                       <span className="font-medium text-slate-400">
                         {p.gender ? `Gender: ${p.gender}` : ''}
                       </span>
@@ -985,7 +985,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   {activeParticipant.name}
                 </h3>
                 <p className="text-xs text-teal-200/80">
-                  {activeParticipant.email} · Registered: {formatDate(activeParticipant.createdAt)}
+                  {activeParticipant.phone ? `Mobile: ${activeParticipant.phone}` : activeParticipant.email} · Registered: {formatDate(activeParticipant.createdAt)}
                 </p>
               </div>
 

@@ -67,7 +67,7 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
             type="button"
             onClick={onOpenProfile}
             className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-teal-50/80 border border-slate-200/80 hover:border-teal-200 transition active:scale-95 shadow-xs group"
-            title={`${user.name} (${user.email}) - ${user.role === 'admin' ? 'Staff Admin' : 'Participant'}`}
+            title={`${user.name} (${user.phone || user.email}) - ${user.role === 'admin' ? 'Staff Admin' : 'Participant'}`}
           >
             <div
               className={`w-6 h-6 rounded-lg text-white font-bold text-[11px] flex items-center justify-center shadow-xs ${

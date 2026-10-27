@@ -251,7 +251,7 @@ export const HomeDashboardScreen: React.FC<HomeDashboardScreenProps> = ({
                 {user.participantId}
               </span>
               <span>•</span>
-              <span className="text-teal-300/80">{user.email}</span>
+              <span className="text-teal-300/80">{user.phone || user.email}</span>
             </div>
           </div>
 

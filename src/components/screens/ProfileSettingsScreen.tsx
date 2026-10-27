@@ -244,7 +244,9 @@ export const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({
                 {user.participantId}
               </span>
             </div>
-            <p className="text-xs text-slate-500 truncate mt-0.5">{user.email}</p>
+            <p className="text-xs text-slate-500 truncate mt-0.5">
+              {user.phone ? `Mobile: ${user.phone}` : user.email}
+            </p>
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <span className="inline-flex items-center gap-1 text-[11px] text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200/60 font-semibold">
                 <Users className="w-3 h-3" />

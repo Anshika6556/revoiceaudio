@@ -3,6 +3,8 @@ import {
   Mic,
   Lock,
   Mail,
+  Phone,
+  Smartphone,
   User as UserIcon,
   Calendar,
   ArrowRight,
@@ -40,12 +42,12 @@ export const WelcomeLoginScreen: React.FC<WelcomeLoginScreenProps> = ({
   const [showRegPassword, setShowRegPassword] = useState(false);
 
   // Login form state
-  const [loginEmail, setLoginEmail] = useState('');
+  const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
   // Register form state
   const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
   const [regCohort, setRegCohort] = useState<Cohort>('healthy');
   const [regGender, setRegGender] = useState<Gender>('prefer_not_to_say');
   const [regAge, setRegAge] = useState<string>('');
@@ -54,7 +56,7 @@ export const WelcomeLoginScreen: React.FC<WelcomeLoginScreenProps> = ({
   const [showConsentDetails, setShowConsentDetails] = useState(false);
 
   // Forgot password form state
-  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryIdentifier, setRecoveryIdentifier] = useState('');
   const [recoveryNewPassword, setRecoveryNewPassword] = useState('');
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -62,9 +64,13 @@ export const WelcomeLoginScreen: React.FC<WelcomeLoginScreenProps> = ({
     setErrorMessage(null);
     setInfoMessage(null);
 
-    const emailClean = loginEmail.trim();
-    if (!emailClean || !loginPassword) {
-      setErrorMessage('Please enter both your email address and password.');
+    const idClean = loginIdentifier.trim();
+    if (!idClean || !loginPassword) {
+      setErrorMessage(
+        roleMode === 'admin'
+          ? 'Please enter both your staff email and password.'
+          : 'Please enter both your mobile number (or Participant ID) and password.'
+      );
       return;
     }
 
@@ -72,7 +78,7 @@ export const WelcomeLoginScreen: React.FC<WelcomeLoginScreenProps> = ({
     try {
       // If roleMode is 'admin', enforce admin verification
       const user = await authService.login(
-        emailClean,
+        idClean,
         loginPassword,
         roleMode === 'admin' ? 'admin' : undefined
       );
@@ -81,7 +87,7 @@ export const WelcomeLoginScreen: React.FC<WelcomeLoginScreenProps> = ({
       if (err instanceof Error) {
         setErrorMessage(err.message);
       } else {
-        setErrorMessage('Invalid credentials. Please verify your email and password.');
+        setErrorMessage('Invalid credentials. Please verify your mobile number / email and password.');
       }
     } finally {
       setLoading(false);
@@ -97,8 +103,9 @@ export const WelcomeLoginScreen: React.FC<WelcomeLoginScreenProps> = ({
       setErrorMessage('Please enter your full name.');
       return;
     }
-    if (!regEmail.trim() || !regEmail.includes('@')) {
-      setErrorMessage('Please enter a valid email address.');
+    const cleanDigits = regPhone.replace(/\D/g, '');
+    if (!cleanDigits || cleanDigits.length < 10 || cleanDigits.length > 15) {
+      setErrorMessage('Please enter a valid 10-digit mobile number.');
       return;
     }
     if (regPassword.length < 6) {
@@ -121,7 +128,7 @@ export const WelcomeLoginScreen: React.FC<WelcomeLoginScreenProps> = ({
     try {
       const params: RegisterParams = {
         name: regName.trim(),
-        email: regEmail.trim(),
+        phone: regPhone.trim(),
         cohort: regCohort,
         role: 'participant',
         gender: regGender,
@@ -147,8 +154,12 @@ export const WelcomeLoginScreen: React.FC<WelcomeLoginScreenProps> = ({
     setErrorMessage(null);
     setInfoMessage(null);
 
-    if (!recoveryEmail.trim() || !recoveryNewPassword) {
-      setErrorMessage('Please enter your email and new password.');
+    if (!recoveryIdentifier.trim() || !recoveryNewPassword) {
+      setErrorMessage(
+        roleMode === 'admin'
+          ? 'Please enter your staff email and new password.'
+          : 'Please enter your mobile number and new password.'
+      );
       return;
     }
     if (recoveryNewPassword.length < 6) {
@@ -158,10 +169,10 @@ export const WelcomeLoginScreen: React.FC<WelcomeLoginScreenProps> = ({
 
     setLoading(true);
     try {
-      await authService.resetPassword(recoveryEmail.trim(), recoveryNewPassword);
+      await authService.resetPassword(recoveryIdentifier.trim(), recoveryNewPassword);
       setInfoMessage('Password has been successfully reset. Please log in.');
       setAuthMode('login');
-      setLoginEmail(recoveryEmail.trim());
+      setLoginIdentifier(recoveryIdentifier.trim());
     } catch (err: unknown) {
       if (err instanceof Error) {
         setErrorMessage(err.message);
@@ -288,19 +299,23 @@ export const WelcomeLoginScreen: React.FC<WelcomeLoginScreenProps> = ({
         <form onSubmit={handleLoginSubmit} className="space-y-4 rounded-3xl bg-white p-6 border border-slate-200/80 shadow-xl">
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              {roleMode === 'admin' ? 'Staff Email' : 'Email Address'}
+              {roleMode === 'admin' ? 'Staff Email' : 'Mobile Number or Participant ID'}
             </label>
             <div className="relative">
               <input
-                type="text"
+                type={roleMode === 'admin' ? 'email' : 'text'}
                 required
-                autoComplete="email"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder={roleMode === 'admin' ? 'staff@institution.org' : 'name@example.com'}
+                autoComplete={roleMode === 'admin' ? 'email' : 'tel'}
+                value={loginIdentifier}
+                onChange={(e) => setLoginIdentifier(e.target.value)}
+                placeholder={roleMode === 'admin' ? 'staff@institution.org' : 'e.g. 9876543210 or SPK_0001'}
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:bg-white transition"
               />
-              <Mail className="absolute right-3.5 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+              {roleMode === 'admin' ? (
+                <Mail className="absolute right-3.5 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+              ) : (
+                <Smartphone className="absolute right-3.5 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+              )}
             </div>
           </div>
 
@@ -381,19 +396,19 @@ export const WelcomeLoginScreen: React.FC<WelcomeLoginScreenProps> = ({
 
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
-              Email
+              Mobile Number
             </label>
             <div className="relative">
               <input
-                type="email"
+                type="tel"
                 required
-                autoComplete="email"
-                value={regEmail}
-                onChange={(e) => setRegEmail(e.target.value)}
-                placeholder="jordan@example.com"
+                autoComplete="tel"
+                value={regPhone}
+                onChange={(e) => setRegPhone(e.target.value)}
+                placeholder="e.g. 9876543210"
                 className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:bg-white transition"
               />
-              <Mail className="absolute right-3.5 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+              <Phone className="absolute right-3.5 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
           </div>
 
@@ -571,18 +586,22 @@ export const WelcomeLoginScreen: React.FC<WelcomeLoginScreenProps> = ({
           <div className="text-left">
             <h2 className="text-sm font-bold text-slate-900">Reset Password</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Enter your registered email and choose a new password.
+              {roleMode === 'admin'
+                ? 'Enter your registered staff email and choose a new password.'
+                : 'Enter your registered mobile number and choose a new password.'}
             </p>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1">
+              {roleMode === 'admin' ? 'Staff Email' : 'Mobile Number'}
+            </label>
             <input
-              type="email"
+              type={roleMode === 'admin' ? 'email' : 'tel'}
               required
-              value={recoveryEmail}
-              onChange={(e) => setRecoveryEmail(e.target.value)}
-              placeholder="name@example.com"
+              value={recoveryIdentifier}
+              onChange={(e) => setRecoveryIdentifier(e.target.value)}
+              placeholder={roleMode === 'admin' ? 'staff@institution.org' : 'e.g. 9876543210'}
               className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:bg-white"
             />
           </div>

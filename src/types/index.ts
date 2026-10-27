@@ -13,7 +13,8 @@ export interface User {
   id: string; // UUID primary key
   participantId: string; // Readable sequential ID: SPK_0001, SPK_0002 or STAFF_0001
   name: string;
-  email: string;
+  phone?: string; // Participant mobile number for authentication
+  email?: string; // Email address (used by staff administrators)
   role: UserRole;
   cohort: Cohort;
   gender: Gender;
