@@ -55,7 +55,7 @@ export const AndroidDeviceGuideModal: React.FC<AndroidDeviceGuideModalProps> = (
               Navigate to the application URL (or your local IP address <code className="font-mono text-teal-800 font-semibold">http://192.168.x.x:3000</code> over shared Wi-Fi).
             </li>
             <li className="leading-relaxed">
-              Tap the <strong>"Install App"</strong> button in the top bar (or tap Chrome menu <span className="font-semibold text-slate-900">⋮ &gt; "Install app" / "Add to Home screen"</span>).
+              In your browser, tap the Chrome menu (<span className="font-semibold text-slate-900">⋮ &gt; "Install app" / "Add to Home screen"</span>).
             </li>
             <li className="leading-relaxed">
               Android will generate an official sandboxed <strong>WebAPK</strong> and place the ReVoice Audio icon on your home screen and app drawer.

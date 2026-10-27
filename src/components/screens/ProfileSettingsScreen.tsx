@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User as UserIcon,
   Shield,
@@ -13,16 +13,8 @@ import {
   CheckCircle2,
   Send,
   Users,
-  Mic,
-  RotateCcw,
-  Search,
-  Filter,
-  Layers,
-  Sparkles,
-  ChevronDown,
-  ChevronUp,
 } from 'lucide-react';
-import { User, ConsentRecord, DeletionRequest, DeletionRequestType, Sentence, SentenceLevel, Recording } from '../../types';
+import { User, ConsentRecord, DeletionRequest, DeletionRequestType } from '../../types';
 import { authService } from '../../services/authService';
 import { deletionService } from '../../services/deletionService';
 import { formatFileSize, formatDate } from '../../utils/formatters';
@@ -38,9 +30,6 @@ interface ProfileSettingsScreenProps {
   onPurgeAccount: () => Promise<void>;
   onExportCorpus: () => Promise<void>;
   onShowDeviceGuide?: () => void;
-  allSentences?: Sentence[];
-  recordings?: Recording[];
-  onRecordSentence?: (sentence: Sentence) => void;
 }
 
 export const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({
@@ -53,9 +42,6 @@ export const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({
   onPurgeAccount,
   onExportCorpus,
   onShowDeviceGuide,
-  allSentences = [],
-  recordings = [],
-  onRecordSentence,
 }) => {
   // Password change form state
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -75,44 +61,6 @@ export const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({
 
   // Participant's active requests
   const [myRequests, setMyRequests] = useState<DeletionRequest[]>([]);
-
-  // 30 Sentences display in Profile
-  const [profileLevelFilter, setProfileLevelFilter] = useState<'all' | SentenceLevel>('all');
-  const [profileSearchQuery, setProfileSearchQuery] = useState('');
-
-  // Map recordings by promptId / sentenceId
-  const recordingsByPrompt = useMemo(() => {
-    const map = new Map<string, Recording[]>();
-    for (const rec of recordings) {
-      const keys = [rec.promptId, rec.sentenceId].filter(Boolean) as string[];
-      for (const k of keys) {
-        const list = map.get(k) || [];
-        list.push(rec);
-        map.set(k, list);
-      }
-    }
-    return map;
-  }, [recordings]);
-
-  // Compute all 30 sentences displayed at once
-  const displayedSentences = useMemo(() => {
-    const sorted = [...allSentences].sort((a, b) => {
-      if (a.level !== b.level) return a.level - b.level;
-      return a.sentenceNumber - b.sentenceNumber;
-    });
-
-    return sorted.filter((s) => {
-      if (profileLevelFilter !== 'all' && s.level !== profileLevelFilter) return false;
-      if (profileSearchQuery.trim()) {
-        const q = profileSearchQuery.toLowerCase().trim();
-        const pid = (s.promptId || s.id || '').toLowerCase();
-        const text = s.text.toLowerCase();
-        const notes = (s.instructionNotes || '').toLowerCase();
-        if (!pid.includes(q) && !text.includes(q) && !notes.includes(q)) return false;
-      }
-      return true;
-    });
-  }, [allSentences, profileLevelFilter, profileSearchQuery]);
 
   useEffect(() => {
     loadRequests();
@@ -275,165 +223,6 @@ export const ProfileSettingsScreen: React.FC<ProfileSettingsScreenProps> = ({
           </div>
         </div>
       </div>
-
-      {/* ALL 30 SENTENCES DISPLAY IN PROFILE */}
-      {allSentences.length > 0 && (
-        <div className="p-6 rounded-3xl bg-white border border-slate-200/80 healthcast-card space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-slate-900">
-                  Corpus Speech Prompts ({allSentences.length} Total)
-                </h2>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
-                  All 30 Visible
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Complete catalog of 30 clinical sentences with individual recording controls
-              </p>
-            </div>
-
-            {/* Quick Level Filter Tabs */}
-            <div className="flex items-center gap-1 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setProfileLevelFilter('all')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                  profileLevelFilter === 'all'
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                All 30
-              </button>
-              {([1, 2, 3] as SentenceLevel[]).map((lvl) => (
-                <button
-                  key={lvl}
-                  type="button"
-                  onClick={() => setProfileLevelFilter(lvl)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                    profileLevelFilter === lvl
-                      ? 'bg-teal-600 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  L{lvl} (10)
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Search Bar */}
-          <div className="relative">
-            <input
-              type="text"
-              value={profileSearchQuery}
-              onChange={(e) => setProfileSearchQuery(e.target.value)}
-              placeholder="Search prompt ID (e.g. L1_S01), Hindi text, or notes..."
-              className="w-full pl-8 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:bg-white transition"
-            />
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
-            {profileSearchQuery && (
-              <button
-                type="button"
-                onClick={() => setProfileSearchQuery('')}
-                className="absolute right-2.5 top-2 text-xs text-slate-400 hover:text-slate-600"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-
-          {/* Sentences List */}
-          <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
-            {displayedSentences.map((sentence) => {
-              const pid = sentence.promptId || sentence.id;
-              const takes = recordingsByPrompt.get(pid) || recordingsByPrompt.get(sentence.id) || [];
-              const hasRecorded = takes.length > 0;
-              const isRetake = takes.some((r) => r.reviewStatus === 'retake_required');
-
-              return (
-                <div
-                  key={sentence.id}
-                  className={`p-3.5 rounded-2xl border transition space-y-2 ${
-                    isRetake
-                      ? 'bg-amber-50/30 border-amber-300'
-                      : hasRecorded
-                      ? 'bg-emerald-50/20 border-emerald-200'
-                      : 'bg-slate-50/60 border-slate-200 hover:bg-white hover:border-teal-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-[11px] font-bold text-teal-900 bg-white px-2 py-0.5 rounded border border-slate-200">
-                        {pid}
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-500">
-                        Level {sentence.level} • {sentence.category || `Prompt #${sentence.sentenceNumber}`}
-                      </span>
-                    </div>
-
-                    <div>
-                      {isRetake ? (
-                        <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
-                          Retake Requested
-                        </span>
-                      ) : hasRecorded ? (
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          <span>{takes.length} take{takes.length === 1 ? '' : 's'} recorded</span>
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-slate-400">Unrecorded</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                    <div className="space-y-0.5 flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-900 leading-snug">
-                        "{sentence.text}"
-                      </p>
-                      {sentence.instructionNotes && (
-                        <p className="text-[11px] text-slate-500">
-                          ({sentence.instructionNotes})
-                        </p>
-                      )}
-                    </div>
-
-                    {onRecordSentence && (
-                      <button
-                        type="button"
-                        onClick={() => onRecordSentence(sentence)}
-                        className={`px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition shrink-0 active:scale-95 shadow-xs ${
-                          isRetake
-                            ? 'bg-amber-500 hover:bg-amber-600 text-slate-950'
-                            : hasRecorded
-                            ? 'bg-white hover:bg-teal-50 text-teal-800 border border-teal-200'
-                            : 'bg-teal-600 hover:bg-teal-700 text-white'
-                        }`}
-                      >
-                        {isRetake ? (
-                          <>
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Retake</span>
-                          </>
-                        ) : (
-                          <>
-                            <Mic className="w-3.5 h-3.5" />
-                            <span>{hasRecorded ? 'Record Again' : 'Record'}</span>
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Consent & Ethics Protocol Card */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 healthcast-card space-y-3">

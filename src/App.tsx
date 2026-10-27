@@ -687,9 +687,6 @@ export default function App() {
             onPurgeAccount={handlePurgeAccount}
             onExportCorpus={handleExportCorpus}
             onShowDeviceGuide={() => setShowDeviceGuide(true)}
-            allSentences={sentences}
-            recordings={recordings}
-            onRecordSentence={handleStartSentenceRecording}
           />
         )}
 

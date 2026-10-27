@@ -1,7 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Activity, Radio, Sparkles } from 'lucide-react';
 import { User, ActiveScreen } from '../../types';
-import { PWAInstallButton } from '../PWAInstallButton';
 
 interface TopAppBarProps {
   user: User | null;
@@ -58,10 +57,8 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
         </div>
       </div>
 
-      {/* Right Slot: Install Button & User Profile Pill */}
+      {/* Right Slot: User Profile Pill */}
       <div className="flex items-center gap-2">
-        <PWAInstallButton />
-
         {user && (
           <button
             type="button"
